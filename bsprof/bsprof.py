@@ -1,8 +1,28 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import threading
 import time
+from dataclasses import dataclass
+
+import psutil
+
+
+@dataclass
+class ProfileData:
+    record_time: float
+    os_load: tuple[float, float, float]
+    core_load: list[float]
+
+
+def get_current_profile_data() -> ProfileData:
+    data = ProfileData(
+        record_time=time.time(),
+        os_load=os.getloadavg(),
+        core_load=psutil.cpu_percent(percpu=True),  # type: ignore
+    )
+    return data
 
 
 def run_subprocess(cmd: str) -> tuple[int, float]:
@@ -15,16 +35,23 @@ def run_subprocess(cmd: str) -> tuple[int, float]:
     return (result, end_time - start_time)
 
 
-def profile_thread(thread_event: threading.Event, wait_time: float = 1.0):
-    print("Profiling thread started")
+def profile_thread(
+    profiling_data: list[ProfileData],
+    thread_event: threading.Event,
+    wait_time: float = 1.0,
+):
     while True:
+        profiling_data.append(get_current_profile_data())
         thread_event.wait(wait_time)
         if thread_event.is_set():
-            print("Profiling thread is exiting")
             break
-        print("Profiling thread is running")
 
     return 0
+
+
+def process_profiling_data(profiling_data: list[ProfileData]):
+    print("Records: {}".format(len(profiling_data)))
+    print(profiling_data)
 
 
 def main(args):
@@ -38,14 +65,25 @@ def main(args):
     # create a thread event to close the profiling thread
     thread_exit_event = threading.Event()
 
+    # profiling data
+    profiling_data = []
+
     # spawn a thread before running the subprocess
-    thread = threading.Thread(target=profile_thread, args=(thread_exit_event,))
+    thread = threading.Thread(
+        target=profile_thread,
+        args=(
+            profiling_data,
+            thread_exit_event,
+        ),
+    )
     thread.start()
 
     ret_value, execution_time = run_subprocess(cmd)
     if ret_value != 0:
         print("Error: subprocess returned non-zero exit code: {}".format(ret_value))
     print("Execution time: {:.3f} seconds".format(execution_time))
+    print("Execution stats:")
+    process_profiling_data(profiling_data)
 
     thread_exit_event.set()
     thread.join()
