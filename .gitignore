@@ -1,8 +1,3 @@
-profile_report_*/*
-
-
-# Added by cargo
-
 /target
 Cargo.lock
 report.json
