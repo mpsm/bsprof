@@ -1,3 +1,5 @@
+use std::fs::File;
+
 mod profile;
 
 fn main() {
@@ -23,7 +25,10 @@ fn main() {
     let report = profile::profile(cmd_name, cmd_args);
 
     println!("Done, saving report");
+    save_report(&report);
+}
 
-    let report_json = serde_json::to_string_pretty(&report).unwrap();
-    println!("{}", report_json);
+fn save_report(report: &profile::ProfileReport) {
+    let file = File::create("report.json").unwrap();
+    serde_json::to_writer_pretty(file, &report).unwrap();
 }

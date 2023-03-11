@@ -5,3 +5,4 @@ profile_report_*/*
 
 /target
 Cargo.lock
+report.json
