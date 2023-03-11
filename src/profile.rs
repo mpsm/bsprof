@@ -1,9 +1,5 @@
 use serde::Serialize;
-use std::{
-    sync::mpsc::Receiver,
-    sync::{mpsc::Sender, Arc},
-    time::Duration,
-};
+use std::{sync::mpsc::Receiver, sync::mpsc::Sender, time::Duration};
 use sysinfo::{CpuExt, SystemExt};
 
 pub mod info;
@@ -11,6 +7,7 @@ pub mod info;
 #[derive(Serialize)]
 pub struct ProfileDatapoint {
     cpu_usage: f32,
+    cpus_utilization: Vec<f32>,
     memory_usage: u64,
 }
 
@@ -28,9 +25,11 @@ enum ThreadCommand {
 }
 
 fn get_data_point(sys: &sysinfo::System) -> ProfileDatapoint {
+    let cpus_data = sys.cpus().iter().map(|cpu| cpu.cpu_usage()).collect();
     ProfileDatapoint {
         cpu_usage: sys.global_cpu_info().cpu_usage(),
         memory_usage: sys.used_memory(),
+        cpus_utilization: cpus_data,
     }
 }
 
