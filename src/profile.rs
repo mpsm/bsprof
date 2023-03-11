@@ -35,7 +35,7 @@ fn get_data_point(sys: &sysinfo::System) -> ProfileDatapoint {
     }
 }
 
-fn monitor_thread(rx: Receiver<ThreadCommand>) -> Vec<ProfileDatapoint> {
+fn monitor_thread(rx: Receiver<ThreadCommand>, interval: Duration) -> Vec<ProfileDatapoint> {
     let mut sys = sysinfo::System::new_all();
     let mut datapoints = Vec::<ProfileDatapoint>::new();
 
@@ -43,7 +43,7 @@ fn monitor_thread(rx: Receiver<ThreadCommand>) -> Vec<ProfileDatapoint> {
         sys.refresh_all();
         datapoints.push(get_data_point(&sys));
 
-        match rx.recv_timeout(Duration::from_secs(1)) {
+        match rx.recv_timeout(interval) {
             Ok(cmd) => {
                 if cmd == ThreadCommand::Stop {
                     break;
@@ -56,12 +56,12 @@ fn monitor_thread(rx: Receiver<ThreadCommand>) -> Vec<ProfileDatapoint> {
     datapoints
 }
 
-pub fn profile(cmd: &String, args: &[String]) -> ProfileReport {
+pub fn profile(cmd: &String, args: &[String], interval: Duration) -> ProfileReport {
     let sys_info = info::get_system_info();
 
     // run monitroing thread and spawn command
     let (tx, rx): (Sender<ThreadCommand>, Receiver<ThreadCommand>) = std::sync::mpsc::channel();
-    let monitor = std::thread::spawn(move || monitor_thread(rx));
+    let monitor = std::thread::spawn(move || monitor_thread(rx, interval));
     let mut cmd_process = std::process::Command::new(cmd).args(args).spawn().unwrap();
 
     // wait for command to finish and kill monitoring thread

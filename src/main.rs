@@ -1,28 +1,35 @@
 use std::fs::File;
 
+use clap::Parser;
+
 mod profile;
 
-fn main() {
-    println!("Build system profiler application");
+#[derive(Parser, Debug)]
+#[command(name = "bsprof")]
+#[command(author = "Marcin Smoczyński <smoczynski.marcin@gmail.com>")]
+#[command(version)]
+#[command(about = "A simple tool for profiling build systems", long_about = None)]
+struct Args {
+    #[arg(short, long, default_value_t = 1000)]
+    interval_ms: u32,
+    command: String,
+    args: Vec<String>,
+}
 
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        println!("No application specified");
-        return;
-    }
+fn main() {
+    let args = Args::parse();
 
     let sys_info = profile::info::get_system_info();
     sys_info.print();
 
-    let cmd_name = &args[1];
-    let cmd_args = &args[2..];
-    if cmd_args.len() > 0 {
-        println!("Running command: {} {:?}", cmd_name, cmd_args);
+    if args.args.len() > 0 {
+        println!("Running command: {} {:?}", args.command, args.args);
     } else {
-        println!("Running command: {}", cmd_name);
+        println!("Running command: {}", args.command);
     }
 
-    let report = profile::profile(cmd_name, cmd_args);
+    let interval = std::time::Duration::from_millis(args.interval_ms as u64);
+    let report = profile::profile(&args.command, &args.args, interval);
 
     println!("Done, saving report");
     save_report(&report);
