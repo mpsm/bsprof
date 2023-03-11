@@ -3,6 +3,7 @@ use std::{sync::mpsc::Receiver, sync::mpsc::Sender, time::Duration};
 use sysinfo::{CpuExt, SystemExt};
 
 pub mod info;
+mod rusage;
 
 #[derive(Serialize)]
 pub struct ProfileDatapoint {
@@ -16,6 +17,7 @@ pub struct ProfileReport {
     system_info: info::SystemInfo,
     cmd_name: String,
     cmd_args: Vec<String>,
+    rusage: rusage::Rusage,
     datapoints: Vec<ProfileDatapoint>,
 }
 
@@ -66,12 +68,14 @@ pub fn profile(cmd: &String, args: &[String]) -> ProfileReport {
     cmd_process.wait().unwrap();
     tx.send(ThreadCommand::Stop).unwrap();
     let datapoints = monitor.join().unwrap();
+    let usage = rusage::get_process_rusage();
 
     // return report
     ProfileReport {
         system_info: sys_info,
         cmd_name: cmd.clone(),
         cmd_args: args.to_vec(),
+        rusage: usage,
         datapoints: datapoints,
     }
 }
