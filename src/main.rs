@@ -1,5 +1,7 @@
+use serde::Serialize;
 use sysinfo::{CpuExt, SystemExt};
 
+#[derive(Serialize)]
 struct SystemInfo {
     num_cpus: u32,
     cpu_name: String,
@@ -58,6 +60,13 @@ impl SystemInfo {
     }
 }
 
+#[derive(Serialize)]
+struct ProfileReport {
+    system_info: SystemInfo,
+    cmd_name: String,
+    cmd_args: Vec<String>,
+}
+
 fn main() {
     println!("Build system profiler application");
     // run application specified in process arguments
@@ -84,4 +93,15 @@ fn main() {
         .unwrap();
 
     cmd.wait().unwrap();
+
+    println!("Done, saving report");
+
+    let report = ProfileReport {
+        system_info: sys_info,
+        cmd_name: cmd_name.to_string(),
+        cmd_args: cmd_args.to_vec(),
+    };
+
+    let report_json = serde_json::to_string(&report).unwrap();
+    println!("{}", report_json);
 }
