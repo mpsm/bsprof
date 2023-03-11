@@ -3,10 +3,10 @@ use sysinfo::{CpuExt, SystemExt};
 
 #[derive(Serialize)]
 pub struct SystemInfo {
-    num_cpus: u32,
-    cpu_name: String,
-    total_memory: u64,
-    os: String,
+    pub num_cpus: u32,
+    pub cpu_name: String,
+    pub total_memory: u64,
+    pub os: String,
 }
 
 pub fn get_system_info() -> SystemInfo {
