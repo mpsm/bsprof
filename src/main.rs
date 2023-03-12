@@ -3,8 +3,9 @@ use std::fs::File;
 mod profile;
 
 struct Args {
-    interval: u32,
-    warmup: u32,
+    interval: std::time::Duration,
+    warmup: std::time::Duration,
+    cooldown: std::time::Duration,
     command: String,
     args: Vec<String>,
 }
@@ -24,7 +25,15 @@ fn main() {
             clap::Arg::new("warmup_ms")
                 .short('w')
                 .long("warmup")
-                .help("Warmup time in ms"),
+                .help("Warmup time in ms")
+                .default_value("0"),
+        )
+        .arg(
+            clap::Arg::new("cooldown_ms")
+                .short('c')
+                .long("cooldown")
+                .help("Cooldown time in ms")
+                .default_value("0"),
         )
         .arg(
             clap::Arg::new("command")
@@ -42,13 +51,19 @@ fn main() {
     let sys_info = profile::info::get_system_info();
     sys_info.print();
 
-    println!("Profiling command: {}", args.command);
-    println!("Profiling args: {:?}", args.args);
-    println!("Profiling warmup: {} ms", args.warmup);
-    println!("Profiling interval: {} ms", args.interval);
+    println!("Profiling command:   {}", args.command);
+    println!("Profiling args:      {:?}", args.args);
+    println!("Profiling warmup:    {} ms", args.warmup.as_millis());
+    println!("Profiling cooldown:  {} ms", args.cooldown.as_millis());
+    println!("Profiling interval:  {} ms", args.interval.as_millis());
 
-    let interval = std::time::Duration::from_millis(args.interval as u64);
-    let report = profile::profile(&args.command, &args.args, interval);
+    let report = profile::profile(
+        &args.command,
+        &args.args,
+        args.interval,
+        args.warmup,
+        args.cooldown,
+    );
 
     println!("Done, saving report");
     save_report(&report);
@@ -72,17 +87,25 @@ fn parse_args(cmd: clap::Command) -> Result<Args, &'static str> {
             return Err("No command specified");
         }
     };
-    let warmup = match m.get_one::<String>("warmup_ms") {
-        Some(w) => w.parse::<u32>().unwrap(),
-        None => 0,
-    };
+    let warmup = m
+        .get_one::<String>("warmup_ms")
+        .unwrap()
+        .parse::<u32>()
+        .unwrap();
+    let cooldown = m
+        .get_one::<String>("cooldown_ms")
+        .unwrap()
+        .parse::<u32>()
+        .unwrap();
+
     let cmdargs: Vec<String> = match m.get_many::<String>("args") {
         Some(args) => args.map(|x| x.to_owned()).collect(),
         None => Vec::new(),
     };
     Ok(Args {
-        interval: interval,
-        warmup: warmup,
+        interval: std::time::Duration::from_millis(interval as u64),
+        warmup: std::time::Duration::from_millis(warmup as u64),
+        cooldown: std::time::Duration::from_millis(cooldown as u64),
         command: command,
         args: cmdargs,
     })
