@@ -75,6 +75,15 @@ impl Args {
         }
         println!("Profiling interval:  {} ms", self.interval.as_millis());
     }
+
+    pub fn create_sequence(&self) -> Vec<u32> {
+        let jobs = self.jobs.unwrap_or(super::profile::info::get_cpu_count());
+        if self.sequence {
+            (1..=jobs).collect()
+        } else {
+            vec![jobs]
+        }
+    }
 }
 
 fn parse_args(cmd: clap::Command, cmd_line_args: &Vec<String>) -> Result<Args, &'static str> {

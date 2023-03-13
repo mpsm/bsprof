@@ -11,12 +11,7 @@ fn main() {
     let sys_info = profile::info::get_system_info();
     sys_info.print();
 
-    let jobs = args.jobs.unwrap_or(profile::info::get_cpu_count());
-    let sequence = if args.sequence {
-        (1..=jobs).collect()
-    } else {
-        vec![jobs]
-    };
+    let sequence = args.create_sequence();
     println!("Profiling with {:?} jobs sequence", sequence);
 
     let settings = profile::ProfileSettings::new(args.interval, args.warmup, args.cooldown);
