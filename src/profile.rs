@@ -11,21 +11,14 @@ pub struct ProfileSettings {
     interval: Duration,
     warmup: Duration,
     cooldown: Duration,
-    jobs: Vec<u32>,
 }
 
 impl ProfileSettings {
-    pub fn new(
-        interval: Duration,
-        warmup: Duration,
-        cooldown: Duration,
-        jobs: Vec<u32>,
-    ) -> ProfileSettings {
+    pub fn new(interval: Duration, warmup: Duration, cooldown: Duration) -> ProfileSettings {
         ProfileSettings {
             interval,
             warmup,
             cooldown,
-            jobs,
         }
     }
 }
@@ -41,6 +34,7 @@ pub struct ProfileDatapoint {
 #[derive(Serialize)]
 pub struct ProfileResult {
     elapsed_time: f64,
+    jobs: u32,
     cmd_name: String,
     cmd_args: Vec<String>,
     rusage: rusage::Rusage,
@@ -88,7 +82,7 @@ fn monitor_thread(rx: Receiver<ThreadCommand>, interval: Duration) -> Vec<Profil
     datapoints
 }
 
-pub fn profile(cmd: &Command, settings: &ProfileSettings) -> ProfileResult {
+pub fn profile(cmd: &mut Command, settings: &ProfileSettings, jobs: u32) -> ProfileResult {
     // run monitroing thread and spawn command
     let (tx, rx): (Sender<ThreadCommand>, Receiver<ThreadCommand>) = std::sync::mpsc::channel();
     let check_interval = settings.interval.clone();
@@ -96,6 +90,9 @@ pub fn profile(cmd: &Command, settings: &ProfileSettings) -> ProfileResult {
 
     // warmup
     std::thread::sleep(settings.warmup);
+
+    // add jobs
+    cmd.add_jobs(jobs);
 
     let start_time = std::time::Instant::now();
     let mut cmd_process = std::process::Command::new(&cmd.name)
@@ -117,6 +114,7 @@ pub fn profile(cmd: &Command, settings: &ProfileSettings) -> ProfileResult {
     // return report
     ProfileResult {
         elapsed_time: elapsed_time.as_secs_f64(),
+        jobs: jobs,
         cmd_name: cmd.name.clone(),
         cmd_args: cmd.args.to_vec(),
         rusage: usage,
