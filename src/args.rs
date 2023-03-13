@@ -16,6 +16,7 @@ impl Args {
         let cmd = clap::Command::new("Build System Profiler")
             .author("Marcin Smoczyński, smoczynski.marcin@gmail.com")
             .about("A simple tool for profiling build systems")
+            .version(clap::crate_version!())
             .arg(
                 clap::Arg::new("interval_ms")
                     .help("Interval in ms between data points")
