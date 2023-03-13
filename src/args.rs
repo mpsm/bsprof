@@ -4,6 +4,8 @@ pub struct Args {
     pub cooldown: std::time::Duration,
     pub jobs: Option<u32>,
     pub sequence: bool,
+    pub target: String,
+    pub clean_target: String,
     pub command: String,
     pub args: Vec<String>,
 }
@@ -47,6 +49,22 @@ impl Args {
                     .long("sequence")
                     .num_args(0)
                     .help("Profile build system with increasing number of jobs"),
+            )
+            .arg(
+                clap::Arg::new("target")
+                    .short('t')
+                    .long("target")
+                    .required(false)
+                    .default_value("all")
+                    .help("Target to build"),
+            )
+            .arg(
+                clap::Arg::new("clean_target")
+                    .short('C')
+                    .long("clean-target")
+                    .required(false)
+                    .default_value("clean")
+                    .help("Target to clean"),
             )
             .arg(
                 clap::Arg::new("command")
@@ -132,10 +150,16 @@ fn parse_args(cmd: clap::Command, cmd_line_args: &Vec<String>) -> Result<Args, &
         Some(args) => args.map(|x| x.to_owned()).collect(),
         None => Vec::new(),
     };
+
+    let target = m.get_one::<String>("target").unwrap().to_owned();
+    let clean_target = m.get_one::<String>("clean_target").unwrap().to_owned();
+
     Ok(Args {
         interval: std::time::Duration::from_millis(interval as u64),
         warmup: std::time::Duration::from_millis(warmup as u64),
         cooldown: std::time::Duration::from_millis(cooldown as u64),
+        target: target,
+        clean_target: clean_target,
         sequence: sequence,
         jobs: jobs,
         command: command,

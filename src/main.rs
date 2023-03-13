@@ -16,10 +16,16 @@ fn main() {
 
     let settings = profile::ProfileSettings::new(args.interval, args.warmup, args.cooldown);
     let mut report = report::Report::new(&sys_info, &settings);
+    let clean_command = cmd::Command::new(&args.command, &vec![args.clean_target.clone()]);
+    let mut build_cmd = cmd::Command::new(&args.command, &args.args);
+    build_cmd.add_arg(&args.target);
     for j in sequence {
+        println!("Cleaning up");
+        clean_command.run().unwrap();
+
         println!("Profiling with {} jobs", j);
-        let mut cmd = cmd::Command::new(&args.command, &args.args);
-        let result = profile::profile(&mut cmd, &settings, j);
+
+        let result = profile::profile(&build_cmd, &settings, j);
         report.add_result(result);
     }
 

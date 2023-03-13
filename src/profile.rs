@@ -82,11 +82,12 @@ fn monitor_thread(rx: Receiver<ThreadCommand>, interval: Duration) -> Vec<Profil
     datapoints
 }
 
-pub fn profile(cmd: &mut Command, settings: &ProfileSettings, jobs: u32) -> ProfileResult {
+pub fn profile(build_cmd: &Command, settings: &ProfileSettings, jobs: u32) -> ProfileResult {
     // run monitroing thread and spawn command
     let (tx, rx): (Sender<ThreadCommand>, Receiver<ThreadCommand>) = std::sync::mpsc::channel();
     let check_interval = settings.interval.clone();
     let monitor = std::thread::spawn(move || monitor_thread(rx, check_interval));
+    let mut cmd = build_cmd.clone();
 
     // warmup
     std::thread::sleep(settings.warmup);
@@ -95,18 +96,13 @@ pub fn profile(cmd: &mut Command, settings: &ProfileSettings, jobs: u32) -> Prof
     cmd.add_jobs(jobs);
 
     let start_time = std::time::Instant::now();
-    let mut cmd_process = std::process::Command::new(&cmd.name)
-        .args(&cmd.args)
-        .spawn()
-        .unwrap();
-
-    // wait for command to finish and kill monitoring thread
-    cmd_process.wait().unwrap();
+    cmd.run().unwrap();
     let elapsed_time = std::time::Instant::now() - start_time;
 
     // cooldown
     std::thread::sleep(settings.cooldown);
 
+    // stop monitoring thread
     tx.send(ThreadCommand::Stop).unwrap();
     let datapoints = monitor.join().unwrap();
     let usage = rusage::get_process_rusage();
