@@ -1,4 +1,5 @@
 mod args;
+mod cmd;
 mod profile;
 
 use std::fs::File;
@@ -6,22 +7,17 @@ use std::fs::File;
 fn main() {
     let args = args::Args::parse_from_cmdline().unwrap();
 
+    args.print();
+
     let sys_info = profile::info::get_system_info();
     sys_info.print();
 
-    println!("Profiling command:   {}", args.command);
-    println!("Profiling args:      {:?}", args.args);
-    println!("Profiling warmup:    {} ms", args.warmup.as_millis());
-    println!("Profiling cooldown:  {} ms", args.cooldown.as_millis());
-    println!("Profiling interval:  {} ms", args.interval.as_millis());
+    let mut cmd = cmd::Command::new(&args.command, &args.args);
+    if let Some(jobs) = args.jobs {
+        cmd.add_jobs(jobs);
+    }
 
-    let report = profile::profile(
-        &args.command,
-        &args.args,
-        args.interval,
-        args.warmup,
-        args.cooldown,
-    );
+    let report = profile::profile(&cmd, args.interval, args.warmup, args.cooldown);
 
     println!("Done, saving report");
     save_report(&report);

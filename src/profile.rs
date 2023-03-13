@@ -1,3 +1,4 @@
+use super::cmd::Command;
 use serde::Serialize;
 use std::{sync::mpsc::Receiver, sync::mpsc::Sender, time::Duration};
 use sysinfo::{CpuExt, SystemExt};
@@ -73,8 +74,7 @@ fn monitor_thread(rx: Receiver<ThreadCommand>, interval: Duration) -> Vec<Profil
 }
 
 pub fn profile(
-    cmd: &String,
-    args: &[String],
+    cmd: &Command,
     interval: Duration,
     warmup: Duration,
     cooldown: Duration,
@@ -89,7 +89,10 @@ pub fn profile(
     std::thread::sleep(warmup);
 
     let start_time = std::time::Instant::now();
-    let mut cmd_process = std::process::Command::new(cmd).args(args).spawn().unwrap();
+    let mut cmd_process = std::process::Command::new(&cmd.name)
+        .args(&cmd.args)
+        .spawn()
+        .unwrap();
 
     // wait for command to finish and kill monitoring thread
     cmd_process.wait().unwrap();
@@ -113,8 +116,8 @@ pub fn profile(
     ProfileReport {
         system_info: sys_info,
         profile_timings: profile_timings,
-        cmd_name: cmd.clone(),
-        cmd_args: args.to_vec(),
+        cmd_name: cmd.name.clone(),
+        cmd_args: cmd.args.to_vec(),
         rusage: usage,
         datapoints: datapoints,
     }
