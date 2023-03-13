@@ -6,19 +6,26 @@ use sysinfo::{CpuExt, SystemExt};
 pub mod info;
 mod rusage;
 
-#[derive(Serialize, Copy, Clone)]
+#[derive(Serialize, Clone)]
 pub struct ProfileSettings {
     interval: Duration,
     warmup: Duration,
     cooldown: Duration,
+    jobs: Vec<u32>,
 }
 
 impl ProfileSettings {
-    pub fn new(interval: Duration, warmup: Duration, cooldown: Duration) -> ProfileSettings {
+    pub fn new(
+        interval: Duration,
+        warmup: Duration,
+        cooldown: Duration,
+        jobs: Vec<u32>,
+    ) -> ProfileSettings {
         ProfileSettings {
             interval,
             warmup,
             cooldown,
+            jobs,
         }
     }
 }

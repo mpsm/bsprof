@@ -16,7 +16,7 @@ impl Report {
     ) -> Report {
         Report {
             system_info: (*system_info).clone(),
-            profile_settings: *settings,
+            profile_settings: (*settings).clone(),
             profile_results: Vec::new(),
         }
     }

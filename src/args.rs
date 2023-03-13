@@ -3,6 +3,7 @@ pub struct Args {
     pub warmup: std::time::Duration,
     pub cooldown: std::time::Duration,
     pub jobs: Option<u32>,
+    pub sequence: bool,
     pub command: String,
     pub args: Vec<String>,
 }
@@ -41,6 +42,13 @@ impl Args {
                     .help("Number of jobs"),
             )
             .arg(
+                clap::Arg::new("sequence")
+                    .short('s')
+                    .long("sequence")
+                    .num_args(0)
+                    .help("Profile build system with increasing number of jobs"),
+            )
+            .arg(
                 clap::Arg::new("command")
                     .required(true)
                     .help("Build command"),
@@ -58,6 +66,10 @@ impl Args {
         println!("Profiling args:      {:?}", self.args);
         println!("Profiling warmup:    {} ms", self.warmup.as_millis());
         println!("Profiling cooldown:  {} ms", self.cooldown.as_millis());
+        println!(
+            "Profiling sequence:  {}",
+            if self.sequence { "yes" } else { "no" }
+        );
         if let Some(jobs) = self.jobs {
             println!("Profiling jobs:      {}", jobs);
         }
@@ -96,10 +108,15 @@ fn parse_args(cmd: clap::Command, cmd_line_args: &Vec<String>) -> Result<Args, &
     let mut jobs = None;
     if let Some(jobs_option) = m.get_one::<String>("jobs") {
         let jobs_parsed = jobs_option.parse::<u32>();
-        if jobs_parsed.is_err() {
+        if jobs_parsed.is_err() || jobs_parsed.clone().unwrap() == 0 {
             return Err("Invalid jobs value");
         }
         jobs = Some(jobs_parsed.unwrap());
+    }
+
+    let mut sequence = false;
+    if let Some(sequnce_option) = m.get_one::<bool>("sequence") {
+        sequence = *sequnce_option;
     }
 
     let cmdargs: Vec<String> = match m.get_many::<String>("args") {
@@ -110,6 +127,7 @@ fn parse_args(cmd: clap::Command, cmd_line_args: &Vec<String>) -> Result<Args, &
         interval: std::time::Duration::from_millis(interval as u64),
         warmup: std::time::Duration::from_millis(warmup as u64),
         cooldown: std::time::Duration::from_millis(cooldown as u64),
+        sequence: sequence,
         jobs: jobs,
         command: command,
         args: cmdargs,

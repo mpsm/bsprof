@@ -17,6 +17,11 @@ pub fn create_system_info() -> sysinfo::System {
     sysinfo::System::new_with_specifics(refresh_kind)
 }
 
+pub fn get_cpu_count() -> u32 {
+    let sys = create_system_info();
+    sys.cpus().len() as u32
+}
+
 pub fn get_system_info() -> SystemInfo {
     let sys = create_system_info();
     let cpu = &sys.cpus()[0];
