@@ -6,8 +6,49 @@ pub struct Args {
     pub args: Vec<String>,
 }
 
-pub fn parse_args(cmd: clap::Command) -> Result<Args, &'static str> {
-    let m = cmd.get_matches();
+impl Args {
+    pub fn parse_from_cmdline() -> Result<Args, &'static str> {
+        let cmd_line_args = std::env::args().collect::<Vec<String>>();
+        let cmd = clap::Command::new("Build System Profiler")
+            .author("Marcin Smoczyński, smoczynski.marcin@gmail.com")
+            .about("A simple tool for profiling build systems")
+            .arg(
+                clap::Arg::new("interval_ms")
+                    .help("Interval in ms between data points")
+                    .short('i')
+                    .long("interval")
+                    .default_value("1000"),
+            )
+            .arg(
+                clap::Arg::new("warmup_ms")
+                    .short('w')
+                    .long("warmup")
+                    .help("Warmup time in ms")
+                    .default_value("0"),
+            )
+            .arg(
+                clap::Arg::new("cooldown_ms")
+                    .short('c')
+                    .long("cooldown")
+                    .help("Cooldown time in ms")
+                    .default_value("0"),
+            )
+            .arg(
+                clap::Arg::new("command")
+                    .required(true)
+                    .help("Command to run"),
+            )
+            .arg(
+                clap::Arg::new("args")
+                    .num_args(0..)
+                    .help("Command arguments"),
+            );
+        parse_args(cmd, &cmd_line_args)
+    }
+}
+
+fn parse_args(cmd: clap::Command, cmd_line_args: &Vec<String>) -> Result<Args, &'static str> {
+    let m = cmd.get_matches_from(cmd_line_args);
     let interval = m
         .get_one::<String>("interval_ms")
         .unwrap()
