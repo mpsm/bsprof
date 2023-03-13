@@ -36,9 +36,12 @@ enum ThreadCommand {
     Stop,
 }
 
-fn get_data_point(sys: &sysinfo::System, start_time: &std::time::Instant) -> ProfileDatapoint {
+fn get_data_point(sys: &mut sysinfo::System, start_time: &std::time::Instant) -> ProfileDatapoint {
     let cpus_data = sys.cpus().iter().map(|cpu| cpu.cpu_usage()).collect();
     let elapsed_time = std::time::Instant::now() - start_time.clone();
+
+    sys.refresh_memory();
+    sys.refresh_cpu();
 
     ProfileDatapoint {
         elapsed: elapsed_time.as_secs_f64(),
@@ -49,13 +52,12 @@ fn get_data_point(sys: &sysinfo::System, start_time: &std::time::Instant) -> Pro
 }
 
 fn monitor_thread(rx: Receiver<ThreadCommand>, interval: Duration) -> Vec<ProfileDatapoint> {
-    let mut sys = sysinfo::System::new_all();
+    let mut sys = info::create_system_info();
     let mut datapoints = Vec::<ProfileDatapoint>::new();
     let start_time = std::time::Instant::now();
 
     loop {
-        sys.refresh_all();
-        datapoints.push(get_data_point(&sys, &start_time));
+        datapoints.push(get_data_point(&mut sys, &start_time));
 
         match rx.recv_timeout(interval) {
             Ok(cmd) => {

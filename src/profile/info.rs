@@ -9,11 +9,16 @@ pub struct SystemInfo {
     pub os: String,
 }
 
-pub fn get_system_info() -> SystemInfo {
+pub fn create_system_info() -> sysinfo::System {
     let refresh_kind = sysinfo::RefreshKind::new()
         .with_cpu(CpuRefreshKind::everything())
         .with_memory();
-    let sys = sysinfo::System::new_with_specifics(refresh_kind);
+
+    sysinfo::System::new_with_specifics(refresh_kind)
+}
+
+pub fn get_system_info() -> SystemInfo {
+    let sys = create_system_info();
     let cpu = &sys.cpus()[0];
 
     let os_name = get_system_name(&sys);
