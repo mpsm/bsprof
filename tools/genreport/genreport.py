@@ -46,7 +46,8 @@ def main(args):
         print("Could not open file: %s" % filename)
         return 1
 
-    profile_data = json.load(fd)
+    report = json.load(fd)
+    profile_data = report["profile_results"][0]
     times = np.array([d["elapsed"] for d in profile_data["datapoints"]])
     cpu_usage = np.array([d["cpu_usage"] for d in profile_data["datapoints"]])
     memory_usage = np.array([d["memory_usage"] for d in profile_data["datapoints"]])
@@ -54,9 +55,7 @@ def main(args):
         [d["cpus_utilization"] for d in profile_data["datapoints"]]
     )
     cpu_cores_data = list(map(np.array, zip(*cpus_utilization)))
-    memory_percent_usage = (
-        memory_usage / profile_data["system_info"]["total_memory"] * 100
-    )
+    memory_percent_usage = memory_usage / report["system_info"]["total_memory"] * 100
 
     assert len(times) == len(cpu_usage) == len(memory_usage)
 

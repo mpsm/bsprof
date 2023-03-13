@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sysinfo::{CpuExt, CpuRefreshKind, SystemExt};
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct SystemInfo {
     pub num_cpus: u32,
     pub cpu_name: String,

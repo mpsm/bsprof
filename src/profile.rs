@@ -6,6 +6,23 @@ use sysinfo::{CpuExt, SystemExt};
 pub mod info;
 mod rusage;
 
+#[derive(Serialize, Copy, Clone)]
+pub struct ProfileSettings {
+    interval: Duration,
+    warmup: Duration,
+    cooldown: Duration,
+}
+
+impl ProfileSettings {
+    pub fn new(interval: Duration, warmup: Duration, cooldown: Duration) -> ProfileSettings {
+        ProfileSettings {
+            interval,
+            warmup,
+            cooldown,
+        }
+    }
+}
+
 #[derive(Serialize)]
 pub struct ProfileDatapoint {
     elapsed: f64,
@@ -15,17 +32,8 @@ pub struct ProfileDatapoint {
 }
 
 #[derive(Serialize)]
-pub struct ProfileTimings {
-    elapsed: f64,
-    warmup: f64,
-    cooldown: f64,
-    interval: f64,
-}
-
-#[derive(Serialize)]
-pub struct ProfileReport {
-    system_info: info::SystemInfo,
-    profile_timings: ProfileTimings,
+pub struct ProfileResult {
+    elapsed_time: f64,
     cmd_name: String,
     cmd_args: Vec<String>,
     rusage: rusage::Rusage,
@@ -73,20 +81,14 @@ fn monitor_thread(rx: Receiver<ThreadCommand>, interval: Duration) -> Vec<Profil
     datapoints
 }
 
-pub fn profile(
-    cmd: &Command,
-    interval: Duration,
-    warmup: Duration,
-    cooldown: Duration,
-) -> ProfileReport {
-    let sys_info = info::get_system_info();
-
+pub fn profile(cmd: &Command, settings: &ProfileSettings) -> ProfileResult {
     // run monitroing thread and spawn command
     let (tx, rx): (Sender<ThreadCommand>, Receiver<ThreadCommand>) = std::sync::mpsc::channel();
-    let monitor = std::thread::spawn(move || monitor_thread(rx, interval));
+    let check_interval = settings.interval.clone();
+    let monitor = std::thread::spawn(move || monitor_thread(rx, check_interval));
 
     // warmup
-    std::thread::sleep(warmup);
+    std::thread::sleep(settings.warmup);
 
     let start_time = std::time::Instant::now();
     let mut cmd_process = std::process::Command::new(&cmd.name)
@@ -99,23 +101,15 @@ pub fn profile(
     let elapsed_time = std::time::Instant::now() - start_time;
 
     // cooldown
-    std::thread::sleep(cooldown);
+    std::thread::sleep(settings.cooldown);
 
     tx.send(ThreadCommand::Stop).unwrap();
     let datapoints = monitor.join().unwrap();
     let usage = rusage::get_process_rusage();
 
-    let profile_timings = ProfileTimings {
-        elapsed: elapsed_time.as_secs_f64(),
-        warmup: warmup.as_secs_f64(),
-        cooldown: cooldown.as_secs_f64(),
-        interval: interval.as_secs_f64(),
-    };
-
     // return report
-    ProfileReport {
-        system_info: sys_info,
-        profile_timings: profile_timings,
+    ProfileResult {
+        elapsed_time: elapsed_time.as_secs_f64(),
         cmd_name: cmd.name.clone(),
         cmd_args: cmd.args.to_vec(),
         rusage: usage,
