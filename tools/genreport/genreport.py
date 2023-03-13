@@ -27,7 +27,6 @@ def gen_cores_plot(times, cpu_cores_data):
     for i, cpu_core_data in enumerate(cpu_cores_data):
         plt.plot(times, cpu_core_data, label="CPU Core {}".format(i))
     plt.grid(True)
-    plt.legend()
     plt.xlabel("Time (s)")
     plt.ylabel("CPU Cores Utilization (%)")
     plt.title("CPU Cores Utilization ({} cores)".format(len(cpu_cores_data)))
