@@ -4,7 +4,7 @@ use std::{sync::mpsc::Receiver, sync::mpsc::Sender, time::Duration};
 use sysinfo::{CpuExt, SystemExt};
 
 pub mod info;
-mod rusage;
+pub mod rusage;
 
 #[derive(Serialize, Clone)]
 pub struct ProfileSettings {
@@ -33,12 +33,12 @@ pub struct ProfileDatapoint {
 
 #[derive(Serialize)]
 pub struct ProfileResult {
-    elapsed_time: f64,
-    jobs: u32,
-    cmd_name: String,
-    cmd_args: Vec<String>,
-    rusage: rusage::Rusage,
-    datapoints: Vec<ProfileDatapoint>,
+    pub elapsed_time: f64,
+    pub jobs: u32,
+    pub cmd_name: String,
+    pub cmd_args: Vec<String>,
+    pub rusage: rusage::Rusage,
+    pub datapoints: Vec<ProfileDatapoint>,
 }
 
 #[derive(PartialEq)]
