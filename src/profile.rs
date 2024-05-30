@@ -1,7 +1,7 @@
 use super::cmd::Command;
 use serde::Serialize;
 use std::{sync::mpsc::Receiver, sync::mpsc::Sender, time::Duration};
-use sysinfo::{CpuExt, SystemExt};
+use sysinfo::System;
 
 pub mod info;
 pub mod rusage;
@@ -62,7 +62,7 @@ fn get_data_point(sys: &mut sysinfo::System, start_time: &std::time::Instant) ->
 }
 
 fn monitor_thread(rx: Receiver<ThreadCommand>, interval: Duration) -> Vec<ProfileDatapoint> {
-    let mut sys = info::create_system_info();
+    let mut sys = System::new_all();
     let mut datapoints = Vec::<ProfileDatapoint>::new();
     let start_time = std::time::Instant::now();
 

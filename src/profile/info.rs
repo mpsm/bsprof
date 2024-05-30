@@ -1,5 +1,5 @@
 use serde::Serialize;
-use sysinfo::{CpuExt, CpuRefreshKind, SystemExt};
+use sysinfo::System;
 
 #[derive(Serialize, Clone)]
 pub struct SystemInfo {
@@ -9,24 +9,15 @@ pub struct SystemInfo {
     pub os: String,
 }
 
-pub fn create_system_info() -> sysinfo::System {
-    let refresh_kind = sysinfo::RefreshKind::new()
-        .with_cpu(CpuRefreshKind::everything())
-        .with_memory();
-
-    sysinfo::System::new_with_specifics(refresh_kind)
-}
-
 pub fn get_cpu_count() -> u32 {
-    let sys = create_system_info();
+    let sys = System::new_all();
     sys.cpus().len() as u32
 }
 
 pub fn get_system_info() -> SystemInfo {
-    let sys = create_system_info();
+    let sys = System::new_all();
     let cpu = &sys.cpus()[0];
-
-    let os_name = get_system_name(&sys);
+    let os_name = get_system_name();
 
     SystemInfo {
         num_cpus: sys.cpus().len() as u32,
@@ -36,19 +27,20 @@ pub fn get_system_info() -> SystemInfo {
     }
 }
 
-fn get_system_name(sys: &sysinfo::System) -> String {
+fn get_system_name() -> String {
     let mut os_name;
-    match sys.name() {
+
+    match System::name() {
         Some(name) => {
             os_name = name;
-            match sys.os_version() {
+            match System::os_version() {
                 Some(version) => {
                     os_name += " ";
                     os_name += &version;
                 }
                 None => {}
             }
-            match sys.kernel_version() {
+            match System::kernel_version() {
                 Some(version) => {
                     os_name += " (";
                     os_name += &version;
