@@ -1,0 +1,46 @@
+name: Build and Release DEB Package
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build Project
+        run: cargo build --release
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Create DEB Package
+        run: cargo deb
+        shell: bash
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload DEB Package to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: target/debian/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
